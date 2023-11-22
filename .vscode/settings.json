@@ -1,0 +1,25 @@
+{
+  "cmake.configureOnOpen": false,
+  "cmake.statusbar.advanced": {
+    "debug" : {
+      "visibility": "hidden"
+              },
+    "launch" : {
+      "visibility": "hidden"
+               },
+    "build" : {
+      "visibility": "hidden"
+               },
+    "buildTarget" : {
+      "visibility": "hidden"
+               },
+    },
+    "files.associations": {
+      "gpio.h": "c",
+      "uart.h": "c",
+      "stdlib.h": "c",
+      "pio.h": "c",
+      "dma.h": "c",
+      "clock.pio.h": "c"
+    },
+}
