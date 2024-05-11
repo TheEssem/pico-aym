@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "pico/time.h"
 
 #include "../aym.h"
 #include "vgm-player.h"
