@@ -13,7 +13,6 @@
 #include "pico/multicore.h"
 
 #include "aym.h"
-//#include "players/ym-player.h"
 #include "players/vgm-player.h"
 
 // UART defines
@@ -31,15 +30,25 @@
 #define CHANB 27
 #define CHANC 28
 
+#define CLK_IRQ 20
+
 #define ADC_VREF 1
 #define ADC_RANGE (1 << 12)
 #define ADC_CONVERT (ADC_VREF / (ADC_RANGE - 1))
 
 void core1_main();
 
+static struct vgm_data *vgm_data;
+static float freq;
+
+void on_pwm_wrap() {
+  pwm_clear_irq(pwm_gpio_to_slice_num(CLK_IRQ));
+
+  vgm_loop_callback(vgm_data);
+}
+
 int main() {
-  // set_sys_clock_khz(16000, true);
-  //stdio_init_all();
+  set_sys_clock_pll(882000000, 5, 4);
 
   // Set up our UART
   uart_init(UART_ID, BAUD_RATE);
@@ -50,8 +59,7 @@ int main() {
 
   //multicore_launch_core1(core1_main);
 
-  //struct ym_data *ym_data = ym_load();
-  struct vgm_data *vgm_data = vgm_load();
+  vgm_data = vgm_load();
   if (vgm_data == NULL) {
     return 1;
   }
@@ -59,7 +67,7 @@ int main() {
   // PWM clock
   gpio_set_function(CLOCK, GPIO_FUNC_PWM);
   uint slice_num = pwm_gpio_to_slice_num(CLOCK);
-  float freq = (float)clock_get_hz(clk_sys);
+  freq = (float)clock_get_hz(clk_sys);
   pwm_set_clkdiv(slice_num, freq / (vgm_data->clock * 2));
   pwm_set_wrap(slice_num, 1);
   pwm_set_gpio_level(CLOCK, 1);
@@ -87,42 +95,21 @@ int main() {
 
   uart_puts(UART_ID, " Starting the player.\r\n");
 
-  //int interval_ms = -1000000 / ym_data->rate;
-  int interval_ms = -1000000 / 44100;
-  struct repeating_timer timer;
-  if (!add_repeating_timer_us(interval_ms, vgm_loop_callback, vgm_data, &timer)) {
-    uart_puts(UART_ID, " Failed to add timer\r\n");
-    return 1;
-  }
-
-  //uint8_t capture_buf[1024];
+  // VGM clock
+  gpio_set_function(CLK_IRQ, GPIO_FUNC_PWM);
+  uint vgm_slice = pwm_gpio_to_slice_num(CLK_IRQ);
+  pwm_clear_irq(vgm_slice);
+  pwm_set_irq_enabled(vgm_slice, true);
+  irq_set_exclusive_handler(PWM_IRQ_WRAP, on_pwm_wrap);
+  irq_set_enabled(PWM_IRQ_WRAP, true);
+  pwm_config config = pwm_get_default_config();
+  pwm_config_set_clkdiv(&config, 2500);
+  pwm_config_set_wrap(&config, 4);
+  pwm_init(vgm_slice, &config, true);
 
   while (1) {
     tight_loop_contents();
   }
-
-  //while (1) {
-    /*adc_select_input(0);
-    uint adc_a_raw = adc_read();
-    adc_select_input(1);
-    uint adc_b_raw = adc_read();
-    adc_select_input(2);
-    uint adc_c_raw = adc_read();
-
-    printf("%.2u\n", adc_a_raw * ADC_CONVERT);
-
-    sleep_ms(10);*/
-
-    /*struct ym_data *ym_data = ym_load();
-
-    char rate_out[12];
-    sprintf(rate_out, " rate: %i\r\n", ym_data->rate);
-    uart_puts(UART_ID, rate_out);
-    free(ym_data);*/
-
-    //uart_puts(UART_ID, " Starting over.\r\n");
-    //loop();
-  //}
 
   return 0;
 }

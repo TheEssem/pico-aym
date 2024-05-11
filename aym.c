@@ -25,12 +25,12 @@ void write_register(char reg, char value) {
   // set register
   set_mode_latch();
   gpio_put_masked(0xff << 2, reg << 2);
-  busy_wait_us_32(1);
+  //busy_wait_us_32(1);
   set_mode_inactive();
 
   // write value
   set_mode_write();
   gpio_put_masked(0xff << 2, value << 2);
-  busy_wait_us_32(1);
+  //busy_wait_us_32(1);
   set_mode_inactive();
 }

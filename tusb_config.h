@@ -18,7 +18,7 @@
 //--------------------------------------------------------------------
 
 // Have a look into audio_device.h for all configurations
-#define CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE              48000
+#define CFG_TUD_AUDIO_FUNC_1_SAMPLE_RATE              44100
 
 #define CFG_TUD_AUDIO_FUNC_1_DESC_LEN                 TUD_AUDIO_MIC_FOUR_CH_DESC_LEN
 

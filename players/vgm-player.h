@@ -1,9 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
-#include "pico/time.h"
 
 struct vgm_data {
-  uint32_t cur_sample;
   uint32_t cur_pos;
   uint32_t delay;
   uint32_t total_samples;
@@ -19,4 +17,4 @@ struct vgm_data {
 };
 
 struct vgm_data *vgm_load();
-bool vgm_loop_callback(struct repeating_timer *t);
+bool vgm_loop_callback(struct vgm_data *data);

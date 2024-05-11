@@ -29,7 +29,7 @@ include(cmake/bin2h.cmake)
 #bin2h(SOURCE_FILE phallanx.ym HEADER_FILE phallanx.h VARIABLE_NAME phallanx)
 bin2h(SOURCE_FILE tunes/STORML~1.YM HEADER_FILE tunes/build/ym-file.h VARIABLE_NAME ym_file)
 
-bin2h(SOURCE_FILE tunes/changsha.vgm HEADER_FILE tunes/build/vgm-file.h VARIABLE_NAME vgm_file)
+bin2h(SOURCE_FILE tunes/whispers.vgm HEADER_FILE tunes/build/vgm-file.h VARIABLE_NAME vgm_file)
 
 # Add executable. Default name is the project name, version 0.1
 
@@ -37,8 +37,8 @@ bin2h(SOURCE_FILE tunes/changsha.vgm HEADER_FILE tunes/build/vgm-file.h VARIABLE
 add_executable(pico-aym pico-aym.c
           players/vgm-player.c
           tunes/build/vgm-file.h
-          aym.c
-          usb.c)
+          aym.c)
+#          usb.c)
 
 # Create C header file with the name <pio program>.pio.h
 #pico_generate_pio_header(pico-aym
@@ -48,7 +48,7 @@ add_executable(pico-aym pico-aym.c
 pico_set_program_name(pico-aym "pico-aym")
 pico_set_program_version(pico-aym "0.1")
 
-#pico_enable_stdio_uart(pico-aym 1)
+pico_enable_stdio_uart(pico-aym 1)
 #pico_enable_stdio_usb(pico-aym 0)
 
 # Add the standard library to the build

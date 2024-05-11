@@ -24,7 +24,6 @@ struct vgm_data *vgm_load() {
   }
 
   struct vgm_data *data = malloc(sizeof(struct vgm_data));
-  data->cur_sample = 0;
   data->cur_pos = 0;
   data->delay = 0;
   data->done = false;
@@ -48,33 +47,36 @@ struct vgm_data *vgm_load() {
   return data;
 }
 
-bool vgm_loop_callback(struct repeating_timer *t) {
-  struct vgm_data *data = t->user_data;
-
-  if (data->cur_sample > data->total_samples || data->done) {
-    data->cur_pos = data->loop_start ? data->loop_start - 28 - data->data_offset : 0;
-    data->cur_sample = data->loop_samples > 0 ? (data->total_samples - data->loop_samples) : 0;
+bool vgm_loop_callback(struct vgm_data *data) {
+  if (data->cur_pos > data->total_samples || data->done) {
+    data->cur_pos = data->loop_start ? data->loop_start + 28 - data->data_offset : 0;
     data->done = false;
   }
 
   if (data->delay > 0) {
     data->delay--;
-    data->cur_sample++;
     return true;
   }
   
-  char cmd = (char)*(data->data + data->cur_pos);
+  char cmd = data->data[data->cur_pos];
+
+  if (cmd >= 0x70 && cmd <= 0x7F) { // wait n+1 samples
+    data->delay = (cmd & 0x0F) + 1;
+    data->cur_pos++;
+    return true;
+  }
+
   switch (cmd) {
     case 0xA0: // write to ay
-      write_register((char)*(data->data + data->cur_pos + 1), (char)*(data->data + data->cur_pos + 2));
-      data->cur_pos = data->cur_pos + 3;
+      write_register(data->data[data->cur_pos + 1], data->data[data->cur_pos + 2]);
+      data->cur_pos += 3;
       break;
     case 0x66: // end
       data->done = true;
       break;
     case 0x61: // wait
-      data->delay = (uint16_t)*(data->data + data->cur_pos + 1);
-      data->cur_pos = data->cur_pos + 3;
+      data->delay = data->data[data->cur_pos + 1] | (data->data[data->cur_pos + 2] << 8);
+      data->cur_pos += 3;
       break;
     case 0x62: // wait 735 samples
       data->delay = 735;
@@ -84,8 +86,8 @@ bool vgm_loop_callback(struct repeating_timer *t) {
       data->delay = 882;
       data->cur_pos++;
       break;
-    case 0x94: // stop dac stream (????) ay/ym doesn't have a sample dac, furnace outputted this for some reason
-      data->cur_pos = data->cur_pos + 2;
+    case 0x94: // stop dac stream (????) ay/ym doesn't have a sample dac, furnace can output this for some reason
+      data->cur_pos += 2;
       break;
     default: {
       char out[48];
