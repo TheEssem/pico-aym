@@ -25,15 +25,9 @@ project(pico-aym C CXX ASM)
 pico_sdk_init()
 
 include(cmake/bin2h.cmake)
-#bin2h(SOURCE_FILE STORML~1.YM HEADER_FILE stormlord.h VARIABLE_NAME stormlord)
-#bin2h(SOURCE_FILE phallanx.ym HEADER_FILE phallanx.h VARIABLE_NAME phallanx)
-bin2h(SOURCE_FILE tunes/STORML~1.YM HEADER_FILE tunes/build/ym-file.h VARIABLE_NAME ym_file)
-
 bin2h(SOURCE_FILE tunes/whispers.vgm HEADER_FILE tunes/build/vgm-file.h VARIABLE_NAME vgm_file)
 
 # Add executable. Default name is the project name, version 0.1
-
-#add_executable(pico-aym pico-aym.c ym-player.c ym-file.h)
 add_executable(pico-aym pico-aym.c
           players/vgm-player.c
           tunes/build/vgm-file.h
