@@ -18,4 +18,4 @@ struct vgm_data {
 };
 
 struct vgm_data *vgm_load();
-bool vgm_loop_callback(struct vgm_data *data);
+void vgm_loop_callback(struct vgm_data *data);

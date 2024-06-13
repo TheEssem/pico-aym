@@ -47,62 +47,63 @@ struct vgm_data *vgm_load() {
   return data;
 }
 
-bool vgm_loop_callback(struct vgm_data *data) {
+void vgm_loop_callback(struct vgm_data *data) {
   if (data->done || data->cur_samples > data->total_samples) {
     data->cur_pos = data->loop_start ? data->loop_start + 28 - data->data_offset : 0;
     data->cur_samples = data->loop_start ? data->total_samples - data->loop_samples : 0;
     data->done = false;
   }
 
-  if (data->delay > 0) {
-    data->delay--;
-    if (data->delay > 0) return true;
-  }
+  if (data->delay > 0) data->delay--;
   
-  char cmd = data->data[data->cur_pos];
+  while (data->delay == 0) {
+    char cmd = data->data[data->cur_pos];
 
-  if (cmd >= 0x70 && cmd <= 0x7F) { // wait n+1 samples
-    uint32_t delay = (cmd & 0x0F) + 1;
-    data->delay = delay;
-    data->cur_samples += delay;
-    data->cur_pos++;
-    return true;
-  }
+    if (cmd >= 0x70 && cmd <= 0x7F) { // wait n+1 samples
+      uint32_t delay = (cmd & 0x0F) + 1;
+      data->delay = delay;
+      data->cur_samples += delay;
+      data->cur_pos++;
+      return;
+    }
 
-  switch (cmd) {
-    case 0xA0: // write to ay
-      write_register(data->data[data->cur_pos + 1], data->data[data->cur_pos + 2]);
-      data->cur_pos += 3;
-      break;
-    case 0x66: // end
-      data->done = true;
-      break;
-    case 0x61: // wait
-      data->delay = data->data[data->cur_pos + 1] | (data->data[data->cur_pos + 2] << 8);
-      data->cur_pos += 3;
-      break;
-    case 0x62: // wait 735 samples
-      data->delay = 735;
-      data->cur_pos++;
-      break;
-    case 0x63: // wait 882 samples
-      data->delay = 882;
-      data->cur_pos++;
-      break;
-    case 0x94: // stop dac stream (????) ay/ym doesn't have a sample dac, furnace can output this for some reason
-      data->cur_pos += 2;
-      break;
-    default: {
-      char out[48];
-      sprintf(out, " Unknown command %02X at offset %08X\r\n", cmd, data->cur_pos);
-      uart_puts(UART_ID, out);
-      break;
+    switch (cmd) {
+      case 0xA0: // write to ay
+        write_register(data->data[data->cur_pos + 1], data->data[data->cur_pos + 2]);
+        data->cur_pos += 3;
+        break;
+      case 0x66: // end
+        data->done = true;
+        break;
+      case 0x61: // wait
+        data->delay = data->data[data->cur_pos + 1] | (data->data[data->cur_pos + 2] << 8);
+        data->cur_pos += 3;
+        break;
+      case 0x62: // wait 735 samples
+        data->delay = 735;
+        data->cur_pos++;
+        break;
+      case 0x63: // wait 882 samples
+        data->delay = 882;
+        data->cur_pos++;
+        break;
+      case 0x94: // stop dac stream (????) ay/ym doesn't have a sample dac, furnace can output this for some reason
+        data->cur_pos += 2;
+        break;
+      default: {
+        char out[48];
+        sprintf(out, " Unknown command %02X at offset %08X\r\n", cmd, data->cur_pos);
+        uart_puts(UART_ID, out);
+        break;
+      }
+    }
+
+    if (data->done) break;
+
+    if (data->delay > 0) {
+      data->cur_samples += data->delay;
     }
   }
 
-  if (data->delay > 0) {
-    data->cur_samples += data->delay;
-  }
-
-  return true;
+  return;
 }
