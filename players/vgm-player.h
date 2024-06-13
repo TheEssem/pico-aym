@@ -4,6 +4,7 @@
 struct vgm_data {
   uint32_t cur_pos;
   uint32_t delay;
+  uint32_t cur_samples;
   uint32_t total_samples;
   uint32_t loop_start;
   uint32_t loop_samples;

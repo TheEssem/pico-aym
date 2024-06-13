@@ -25,6 +25,7 @@ struct vgm_data *vgm_load() {
   struct vgm_data *data = malloc(sizeof(struct vgm_data));
   data->cur_pos = 0;
   data->delay = 0;
+  data->cur_samples = 0;
   data->done = false;
 
   uint32_t *total_samples = (uint32_t *)(VGM_FILE + 24);
@@ -47,20 +48,23 @@ struct vgm_data *vgm_load() {
 }
 
 bool vgm_loop_callback(struct vgm_data *data) {
-  if (data->cur_pos > data->total_samples || data->done) {
+  if (data->done || data->cur_samples > data->total_samples) {
     data->cur_pos = data->loop_start ? data->loop_start + 28 - data->data_offset : 0;
+    data->cur_samples = data->loop_start ? data->total_samples - data->loop_samples : 0;
     data->done = false;
   }
 
   if (data->delay > 0) {
     data->delay--;
-    return true;
+    if (data->delay > 0) return true;
   }
   
   char cmd = data->data[data->cur_pos];
 
   if (cmd >= 0x70 && cmd <= 0x7F) { // wait n+1 samples
-    data->delay = (cmd & 0x0F) + 1;
+    uint32_t delay = (cmd & 0x0F) + 1;
+    data->delay = delay;
+    data->cur_samples += delay;
     data->cur_pos++;
     return true;
   }
@@ -94,6 +98,10 @@ bool vgm_loop_callback(struct vgm_data *data) {
       uart_puts(UART_ID, out);
       break;
     }
+  }
+
+  if (data->delay > 0) {
+    data->cur_samples += data->delay;
   }
 
   return true;
